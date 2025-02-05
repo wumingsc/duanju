@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>短剧搜索引擎</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #results {
+            margin-top: 20px;
+        }
+
+   .result-item {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+
+   .result-item h3 {
+            margin-top: 0;
+        }
+
+   .result-item p {
+            margin: 5px 0;
+        }
+
+   .copy-button {
+            padding: 5px 10px;
+            background-color: #008CBA;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+   .copy-button:hover {
+            background-color: #007B9A;
+        }
+    </style>
+</head>
+
+<body>
+
+
+    <input type="text" id="searchInput" placeholder="短剧搜索：输入搜索内容">
+    <button id="searchButton">搜索</button>
+
+    <div id="results"></div>
+
+  <h2>跨域问题：</h2>
+  <div>
+    <button><a href="https://files.ptger.cn/api/files/vagueQuery?name=" target="_blank" id="link1">1 万+短剧搜索</a></button>
+
+    <button><a href="https://www.hhlqilongzhu.cn/api/duanju_cat.php?name=" target="_blank" id="link2">短剧影视</a></button>
+
+    <button><a href="https://www.hhlqilongzhu.cn/api/ziyuan_nanfeng.php?keysearch=" target="_blank" id="link3">广播剧|影视|动漫搜索</a></button>
+
+<button><a href="http://m.9dups.com/app/index.html" target="_blank" id="link3">备用</a></button>
+  </div>
+    <script>
+        document.getElementById('searchButton').addEventListener('click', function () {
+            // 清空之前的搜索结果
+            resetResults();
+
+            var keyword = document.getElementById('searchInput').value;
+            if (keyword) {
+                let allResultsEmpty = true;  // 假设所有结果都为空
+
+                // 调用第一个 API
+                var api1Url = 'https://zy.6789o.com/duanjuapi/search.php?text=' + keyword;
+                fetchData(api1Url, '全网短剧查询 API', data => data.code === 200 && data.data.length > 0, data => data.data);
+
+                // 调用第二个 API
+                var api2Url = 'https://dj.lbbb.cc/api.php?name=' + keyword;
+                fetchData(api2Url, '短剧视频 API', data => data.datas && data.datas.data && data.datas.data.length > 0, data => data.datas.data);
+
+
+                function fetchData(url, apiName, successCondition, getDataFunction) {
+                    fetch(url)
+                   .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok');
+                            }
+                            return response.json();
+                        })
+                   .then(data => {
+                            if (successCondition(data)) {
+                                displayResults(getDataFunction(data), apiName);
+                                allResultsEmpty = false;
+                            }
+                        })
+                   .catch(error => {
+                            console.error(`调用 ${apiName} 出错：`, error);
+                            // 可以在这里添加在界面上显示错误的逻辑
+                        });
+                }
+
+                // 更新备用链接的 href 属性
+                document.getElementById('link1').href = 'https://files.ptger.cn/api/files/vagueQuery?name=' + keyword;
+                document.getElementById('link2').href = 'https://www.hhlqilongzhu.cn/api/duanju_cat.php?name=' + keyword;
+                document.getElementById('link3').href = 'https://www.hhlqilongzhu.cn/api/ziyuan_nanfeng.php?keysearch=' + keyword;
+
+
+                if (allResultsEmpty) {
+                    var noResultItem = document.createElement('div');
+                    noResultItem.textContent = '搜索结果：';
+                    document.getElementById('results').appendChild(noResultItem);
+                }
+            }
+        });
+
+        function displayResults(results, apiName) {
+            var resultsDiv = document.getElementById('results');
+            results.forEach(result => {
+                var resultItem = document.createElement('div');
+                resultItem.classList.add('result-item');
+
+                var h3 = document.createElement('h3');
+                h3.textContent = apiName;
+                resultItem.appendChild(h3);
+
+                var name = document.createElement('p');
+                name.textContent = '名称：' + (result.name || result.title);
+                resultItem.appendChild(name);
+
+                var link = document.createElement('p');
+                var linkValue = result.viewlink || result.link || result.url;
+                link.innerHTML = '链接：<a href="' + linkValue + '" target="_blank">' + linkValue + '</a>';
+                resultItem.appendChild(link);
+
+                // 创建复制按钮
+                var copyButton = document.createElement('button');
+                copyButton.textContent = '复制';
+                copyButton.classList.add('copy-button');
+                copyButton.addEventListener('click', function () {
+                    copyToClipboard(linkValue);
+                });
+                resultItem.appendChild(copyButton);
+
+                var update = document.createElement('p');
+                update.textContent = '更新时间：' + (result.addtime || '无');
+                resultItem.appendChild(update);
+
+                resultsDiv.appendChild(resultItem);
+            });
+        }
+
+        function copyToClipboard(text) {
+            var tempInput = document.createElement('input');
+            tempInput.style = "position: absolute; left: -1000px; top: -1000px";
+            tempInput.value = text;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            alert('已复制到剪贴板');
+        }
+
+        function resetResults() {
+            var resultsDiv = document.getElementById('results');
+            // 移除结果元素
+            while (resultsDiv.firstChild) {
+                resultsDiv.removeChild(resultsDiv.firstChild);
+            }
+        }
+    </script>
+</body>
+
+</html>
